@@ -16,12 +16,10 @@ import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
-import net.runelite.api.events.ClientTick;
+import net.runelite.api.Player;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ItemContainerChanged;
-import net.runelite.api.events.WidgetHiddenChanged;
-import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.Notifier;
 import net.runelite.client.config.ConfigManager;
@@ -42,6 +40,7 @@ public class BronzemanModePlugin extends Plugin
 	static final String CONFIG_GROUP = "bronzemanmode";
 	public static final String CONFIG_KEY = "unlockeditems";
 	private static final int AMOUNT_OF_TICKS_TO_SHOW_OVERLAY = 8;
+	private static final int GE_REGION = 12598;
 
 	@Inject
 	private OverlayManager overlayManager;
@@ -119,7 +118,7 @@ public class BronzemanModePlugin extends Plugin
 			return;
 		}
 
-		log.info("Unlocked {} items, the ids were {}", recentUnlocks.size(), recentUnlocks);
+		log.info("Unlocked {} item(s), the id(s) were {}", recentUnlocks.size(), recentUnlocks);
 		unlockedItems.addAll(recentUnlocks);
 		recentUnlockedImages = recentUnlocks.stream().map(itemManager::getImage).collect(Collectors.toList());
 		ticksToLastUnlock = 0;
@@ -175,12 +174,19 @@ public class BronzemanModePlugin extends Plugin
 			itemsRecentlyUnlocked = false;
 		}
 		ticksToLastUnlock += 1;
+
+		killSearchResults();
 	}
 
-
-	@Subscribe
-	public void onClientTick(ClientTick event)
+	void killSearchResults()
 	{
+		Player localPlayer = client.getLocalPlayer();
+
+		if (localPlayer == null || localPlayer.getWorldLocation().getRegionID() != GE_REGION)
+		{
+			return;
+		}
+
 		Widget grandExchangeSearchResults = client.getWidget(162, 53);
 
 		if (grandExchangeSearchResults == null)

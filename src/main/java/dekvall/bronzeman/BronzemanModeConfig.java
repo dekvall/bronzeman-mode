@@ -5,7 +5,7 @@ import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 
-@ConfigGroup("bronzemanmode")
+@ConfigGroup(BronzemanModePlugin.CONFIG_GROUP)
 public interface BronzemanModeConfig extends Config
 {
 	@ConfigItem(

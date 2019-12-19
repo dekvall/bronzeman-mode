@@ -1,13 +1,10 @@
 package dekvall.bronzeman;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
+import com.google.gson.reflect.TypeToken;
 import com.google.inject.Provides;
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -23,9 +20,10 @@ import net.runelite.api.events.ClientTick;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ItemContainerChanged;
+import net.runelite.api.events.WidgetHiddenChanged;
+import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.Notifier;
-import net.runelite.client.RuneLite;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ItemManager;
@@ -33,6 +31,7 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.ui.overlay.OverlayManager;
+import static net.runelite.http.api.RuneLiteAPI.GSON;
 
 @Slf4j
 @PluginDescriptor(
@@ -40,8 +39,10 @@ import net.runelite.client.ui.overlay.OverlayManager;
 )
 public class BronzemanModePlugin extends Plugin
 {
+	static final String CONFIG_GROUP = "bronzemanmode";
+	public static final String CONFIG_KEY = "unlockeditems";
 	private static final int AMOUNT_OF_TICKS_TO_SHOW_OVERLAY = 8;
-	private static final String FILENAME = "bronzeman-mode-unlocks.txt";
+
 	@Inject
 	private OverlayManager overlayManager;
 
@@ -99,43 +100,6 @@ public class BronzemanModePlugin extends Plugin
 		}
 	}
 
-	private void loadUnlockedItems()
-	{
-		unlockedItems.clear();
-		try
-		{
-			File saveFile = getSaveFile();
-			BufferedReader r = new BufferedReader(new FileReader(saveFile));
-			String l;
-			while ((l = r.readLine()) != null)
-			{
-				unlockedItems.add(Integer.parseInt(l));
-			}
-			r.close();
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-		}
-	}
-
-	private File getSaveFile() throws IOException
-	{
-		File saveFolder = new File(RuneLite.PROFILES_DIR, client.getUsername());
-		if (!saveFolder.exists())
-		{
-			saveFolder.mkdirs();
-		}
-
-		File saveFile = new File(saveFolder, FILENAME);
-		if (!saveFile.exists())
-		{
-			saveFile.createNewFile();
-
-		}
-		return saveFile;
-	}
-
 	@Subscribe
 	public void onItemContainerChanged(ItemContainerChanged event)
 	{
@@ -146,6 +110,7 @@ public class BronzemanModePlugin extends Plugin
 
 		Set<Integer> recentUnlocks = Arrays.stream(client.getItemContainer(InventoryID.INVENTORY).getItems())
 			.map(Item::getId)
+			.map(itemManager::canonicalize)
 			.filter(id -> !unlockedItems.contains(id) && id != -1)
 			.collect(Collectors.toSet());
 
@@ -153,6 +118,7 @@ public class BronzemanModePlugin extends Plugin
 		{
 			return;
 		}
+
 		log.info("Unlocked {} items, the ids were {}", recentUnlocks.size(), recentUnlocks);
 		unlockedItems.addAll(recentUnlocks);
 		recentUnlockedImages = recentUnlocks.stream().map(itemManager::getImage).collect(Collectors.toList());
@@ -168,20 +134,30 @@ public class BronzemanModePlugin extends Plugin
 
 	private void saveUnlockedItems()
 	{
-		File saveFile;
-		try
+		String key = client.getUsername() + "." + CONFIG_KEY;
+
+		if (unlockedItems == null || unlockedItems.isEmpty())
 		{
-			saveFile = getSaveFile();
-			PrintWriter w = new PrintWriter(saveFile);
-			for (int itemId : unlockedItems)
-			{
-				w.println(itemId);
-			}
-			w.close();
+			configManager.unsetConfiguration(CONFIG_GROUP, key);
+			return;
 		}
-		catch (Exception e)
+
+		String json = GSON.toJson(unlockedItems);
+		configManager.setConfiguration(CONFIG_GROUP, key, json);
+	}
+
+	private void loadUnlockedItems()
+	{
+		String key = client.getUsername() + "." + CONFIG_KEY;
+
+		String json = configManager.getConfiguration(CONFIG_GROUP, key);
+		unlockedItems.clear();
+
+		if (!Strings.isNullOrEmpty(json))
 		{
-			e.printStackTrace();
+			// CHECKSTYLE:OFF
+			unlockedItems.addAll(GSON.fromJson(json, new TypeToken<List<Integer>>(){}.getType()));
+			// CHECKSTYLE:ON
 		}
 	}
 
@@ -200,6 +176,7 @@ public class BronzemanModePlugin extends Plugin
 		}
 		ticksToLastUnlock += 1;
 	}
+
 
 	@Subscribe
 	public void onClientTick(ClientTick event)

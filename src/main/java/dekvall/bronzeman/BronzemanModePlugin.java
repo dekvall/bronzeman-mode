@@ -1,7 +1,5 @@
-package com.bronzeman;
+package dekvall.bronzeman;
 
-import com.google.common.collect.EvictingQueue;
-import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
 import com.google.inject.Provides;
 import java.awt.image.BufferedImage;
@@ -11,10 +9,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
@@ -22,17 +17,13 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
-import net.runelite.api.ChatMessageType;
 import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
-import net.runelite.api.ItemContainer;
 import net.runelite.api.events.ClientTick;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ItemContainerChanged;
-import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.widgets.Widget;
-import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.Notifier;
 import net.runelite.client.RuneLite;
 import net.runelite.client.config.ConfigManager;
@@ -65,6 +56,9 @@ public class BronzemanModePlugin extends Plugin
 
 	@Inject
 	private BronzemanModeOverlay overlay;
+
+	@Inject
+	private ConfigManager configManager;
 
 	@Inject
 	ItemManager itemManager;

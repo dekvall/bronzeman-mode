@@ -1,5 +1,5 @@
 
-package com.bronzeman;
+package dekvall.bronzeman;
 
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;

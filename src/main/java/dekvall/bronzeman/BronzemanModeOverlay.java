@@ -1,4 +1,4 @@
-package com.bronzeman;
+package dekvall.bronzeman;
 
 import java.awt.Color;
 import java.awt.Dimension;

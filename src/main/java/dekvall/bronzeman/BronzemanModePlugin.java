@@ -202,8 +202,6 @@ public class BronzemanModePlugin extends Plugin
 		}
 		ticksToLastUnlock += 1;
 
-		killSearchResults();
-
 		Player localPlayer = client.getLocalPlayer();
 		inGeRegion = localPlayer != null && localPlayer.getWorldLocation().getRegionID() == GE_REGION;
 	}

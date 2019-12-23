@@ -36,17 +36,26 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import lombok.AccessLevel;
 import lombok.Getter;
+import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
+import net.runelite.api.ItemID;
+import net.runelite.api.MessageNode;
 import net.runelite.api.Player;
+import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.ClientTick;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.Notifier;
+import net.runelite.client.chat.ChatColorType;
+import net.runelite.client.chat.ChatCommandManager;
+import net.runelite.client.chat.ChatMessageBuilder;
+import net.runelite.client.chat.ChatMessageManager;
+import net.runelite.client.chat.QueuedMessage;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ItemManager;
@@ -68,6 +77,8 @@ public class BronzemanModePlugin extends Plugin
 	private static final int AMOUNT_OF_TICKS_TO_SHOW_OVERLAY = 8;
 	private static final int GE_REGION = 12598;
 
+	private static final String UNLOCKED_ITEMS_STRING = "!bronzemanunlocks";
+
 	@Inject
 	private OverlayManager overlayManager;
 
@@ -87,6 +98,12 @@ public class BronzemanModePlugin extends Plugin
 	private ConfigManager configManager;
 
 	@Inject
+	private ChatMessageManager chatMessageManager;
+
+	@Inject
+	private ChatCommandManager chatCommandManager;
+
+	@Inject
 	ItemManager itemManager;
 
 	private final Set<Integer> unlockedItems = Sets.newHashSet();
@@ -101,6 +118,7 @@ public class BronzemanModePlugin extends Plugin
 	protected void startUp() throws Exception
 	{
 		overlayManager.add(overlay);
+		chatCommandManager.registerCommand(UNLOCKED_ITEMS_STRING, this::unlockedItemsLookup);
 		if (client.getGameState() == GameState.LOGGED_IN)
 		{
 			loadUnlockedItems();
@@ -113,6 +131,7 @@ public class BronzemanModePlugin extends Plugin
 	protected void shutDown() throws Exception
 	{
 		overlayManager.remove(overlay);
+		chatCommandManager.unregisterCommand(UNLOCKED_ITEMS_STRING);
 		unlockedItems.clear();
 		log.info("Bronzeman Mode stopped!");
 	}
@@ -137,7 +156,8 @@ public class BronzemanModePlugin extends Plugin
 		Set<Integer> recentUnlocks = Arrays.stream(client.getItemContainer(InventoryID.INVENTORY).getItems())
 			.map(Item::getId)
 			.map(itemManager::canonicalize)
-			.filter(id -> !unlockedItems.contains(id) && id != -1)
+			.filter(id -> client.getItemDefinition(id).isTradeable())
+			.filter(id -> id != -1 && !unlockedItems.contains(id))
 			.collect(Collectors.toSet());
 
 		if (recentUnlocks.isEmpty())
@@ -155,6 +175,14 @@ public class BronzemanModePlugin extends Plugin
 		if (config.sendNotification())
 		{
 			notifier.notify("New bronzeman unlock!");
+		}
+
+		if (config.sendChatMessage())
+		{
+			for (int id : recentUnlocks)
+			{
+				sendChatMessage("You have unlocked a new item: " + client.getItemDefinition(id).getName() + ".");
+			}
 		}
 	}
 
@@ -239,5 +267,43 @@ public class BronzemanModePlugin extends Plugin
 				children[i + 2].setOpacity(60);
 			}
 		}
+	}
+
+	private void sendChatMessage(String chatMessage)
+	{
+		final String message = new ChatMessageBuilder()
+			.append(ChatColorType.HIGHLIGHT)
+			.append(chatMessage)
+			.build();
+
+		chatMessageManager.queue(
+			QueuedMessage.builder()
+				.type(ChatMessageType.CONSOLE)
+				.runeLiteFormattedMessage(message)
+				.build());
+	}
+
+	private void unlockedItemsLookup(ChatMessage chatMessage, String message)
+	{
+		MessageNode messageNode = chatMessage.getMessageNode();
+
+		if (!messageNode.getName().equals(client.getLocalPlayer().getName()))
+		{
+			return;
+		}
+
+		final ChatMessageBuilder builder = new ChatMessageBuilder()
+			.append(ChatColorType.HIGHLIGHT)
+			.append("You have unlocked ")
+			.append(ChatColorType.NORMAL)
+			.append(Integer.toString(unlockedItems.size()))
+			.append(ChatColorType.HIGHLIGHT)
+			.append(" items.");
+
+		String response = builder.build();
+
+		messageNode.setRuneLiteFormatMessage(response);
+		chatMessageManager.update(messageNode);
+		client.refreshChat();
 	}
 }

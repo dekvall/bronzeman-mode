@@ -32,12 +32,22 @@ import net.runelite.client.config.ConfigItem;
 public interface BronzemanModeConfig extends Config
 {
 	@ConfigItem(
-		keyName = "notify",
+		keyName = "sendNotification",
 		name = "Notify on unlock",
 		description = "Send a notification when a new item is unlocked"
 	)
 	default boolean sendNotification()
 	{
 		return false;
+	}
+
+	@ConfigItem(
+		keyName = "sendChaMessage",
+		name = "Chat message on unlock",
+		description = "Send a chat message when a new item is unlocked"
+	)
+	default boolean sendChatMessage()
+	{
+		return true;
 	}
 }

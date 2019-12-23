@@ -122,6 +122,7 @@ public class BronzemanModePlugin extends Plugin
 		if (client.getGameState() == GameState.LOGGED_IN)
 		{
 			loadUnlockedItems();
+			unlockBond();
 		}
 
 		log.info("Bronzeman Mode started!");
@@ -213,6 +214,11 @@ public class BronzemanModePlugin extends Plugin
 			unlockedItems.addAll(GSON.fromJson(json, new TypeToken<List<Integer>>(){}.getType()));
 			// CHECKSTYLE:ON
 		}
+	}
+
+	private void unlockBond()
+	{
+		unlockedItems.add(ItemID.OLD_SCHOOL_BOND);
 	}
 
 	@Provides

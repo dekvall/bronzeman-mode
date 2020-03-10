@@ -43,12 +43,11 @@ import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
 import net.runelite.api.ItemID;
 import net.runelite.api.MessageNode;
-import net.runelite.api.Player;
 import net.runelite.api.events.ChatMessage;
-import net.runelite.api.events.ClientTick;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ItemContainerChanged;
+import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.Notifier;
 import net.runelite.client.chat.ChatColorType;
@@ -75,7 +74,8 @@ public class BronzemanModePlugin extends Plugin
 	static final String CONFIG_GROUP = "bronzemanmode";
 	public static final String CONFIG_KEY = "unlockeditems";
 	private static final int AMOUNT_OF_TICKS_TO_SHOW_OVERLAY = 8;
-	private static final int GE_REGION = 12598;
+	private static final int GE_SEARCH_BUILD_SCRIPT = 751;
+	private static final int GE_OFFER_SCRIPT = 811;
 
 	private static final String UNLOCKED_ITEMS_STRING = "!bronzemanunlocks";
 
@@ -112,7 +112,12 @@ public class BronzemanModePlugin extends Plugin
 	@Getter(AccessLevel.PACKAGE)
 	private boolean itemsRecentlyUnlocked;
 	private int ticksToLastUnlock;
-	private boolean inGeRegion;
+
+	@Provides
+	BronzemanModeConfig provideConfig(ConfigManager configManager)
+	{
+		return configManager.getConfig(BronzemanModeConfig.class);
+	}
 
 	@Override
 	protected void startUp() throws Exception
@@ -157,8 +162,9 @@ public class BronzemanModePlugin extends Plugin
 		Set<Integer> recentUnlocks = Arrays.stream(client.getItemContainer(InventoryID.INVENTORY).getItems())
 			.map(Item::getId)
 			.map(itemManager::canonicalize)
-			.filter(id -> client.getItemDefinition(id).isTradeable())
-			.filter(id -> id != -1 && !unlockedItems.contains(id))
+			.filter(id -> id != -1
+				&& client.getItemDefinition(id).isTradeable()
+				&& !unlockedItems.contains(id))
 			.collect(Collectors.toSet());
 
 		if (recentUnlocks.isEmpty())
@@ -221,11 +227,7 @@ public class BronzemanModePlugin extends Plugin
 		unlockedItems.add(ItemID.OLD_SCHOOL_BOND);
 	}
 
-	@Provides
-	BronzemanModeConfig provideConfig(ConfigManager configManager)
-	{
-		return configManager.getConfig(BronzemanModeConfig.class);
-	}
+
 
 	@Subscribe
 	public void onGameTick(GameTick event)
@@ -235,15 +237,12 @@ public class BronzemanModePlugin extends Plugin
 			itemsRecentlyUnlocked = false;
 		}
 		ticksToLastUnlock += 1;
-
-		Player localPlayer = client.getLocalPlayer();
-		inGeRegion = localPlayer != null && localPlayer.getWorldLocation().getRegionID() == GE_REGION;
 	}
 
 	@Subscribe
-	public void onClientTick(ClientTick event)
+	public void onScriptPostFired(ScriptPostFired event)
 	{
-		if (inGeRegion)
+		if (event.getScriptId() == GE_SEARCH_BUILD_SCRIPT)
 		{
 			killSearchResults();
 		}
@@ -269,8 +268,8 @@ public class BronzemanModePlugin extends Plugin
 			if (!unlockedItems.contains(children[i + 2].getItemId()))
 			{
 				children[i].setHidden(true);
-				children[i + 1].setOpacity(60);
-				children[i + 2].setOpacity(60);
+				children[i + 1].setOpacity(170);
+				children[i + 2].setOpacity(170);
 			}
 		}
 	}

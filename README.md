@@ -5,4 +5,6 @@ When you have have had an item in your inventory once, it will be available to b
 
 Use the chat command `!bronzemanunlocks` to see how many items you have unlocked so far.
 
-I will probably add more features in the future. Suggestions welcome.
+I will probably add more features in the future.
+
+Suggestions are very welcome!

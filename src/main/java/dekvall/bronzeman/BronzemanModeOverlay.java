@@ -29,15 +29,21 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import javax.inject.Inject;
+import net.runelite.api.Constants;
+import java.awt.Point;
 import net.runelite.client.ui.overlay.Overlay;
+import net.runelite.client.ui.overlay.OverlayPanel;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.components.ComponentOrientation;
 import net.runelite.client.ui.overlay.components.ImageComponent;
+import net.runelite.client.ui.overlay.components.LineComponent;
 import net.runelite.client.ui.overlay.components.PanelComponent;
 import net.runelite.client.ui.overlay.components.TitleComponent;
 
-public class BronzemanModeOverlay extends Overlay
+public class BronzemanModeOverlay extends OverlayPanel
 {
+	private static final int WIDTH = 2*Constants.ITEM_SPRITE_WIDTH;
+
 	private final BronzemanModePlugin plugin;
 	private final PanelComponent panelComponent = new PanelComponent();
 
@@ -58,18 +64,19 @@ public class BronzemanModeOverlay extends Overlay
 			return null;
 		}
 
-		panelComponent.setOrientation(ComponentOrientation.HORIZONTAL);
-		panelComponent.setWrapping(5);
-
-		panelComponent.getChildren().add(TitleComponent.builder()
-			.text("Unlocked:")
-			.color(Color.GREEN)
+		panelComponent.setOrientation(ComponentOrientation.VERTICAL);
+		panelComponent.getChildren().add(LineComponent.builder()
+			.left("Unlocked:")
+			.leftColor(Color.GREEN)
 			.build());
+
+		panelComponent.setPreferredSize(new Dimension(WIDTH, 0));
 
 		for (BufferedImage image : plugin.getRecentUnlockedImages())
 		{
 			panelComponent.getChildren().add(new ImageComponent(image));
 		}
+
 		return panelComponent.render(graphics);
 	}
 }

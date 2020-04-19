@@ -75,7 +75,6 @@ public class BronzemanModePlugin extends Plugin
 	public static final String CONFIG_KEY = "unlockeditems";
 	private static final int AMOUNT_OF_TICKS_TO_SHOW_OVERLAY = 8;
 	private static final int GE_SEARCH_BUILD_SCRIPT = 751;
-	private static final int GE_OFFER_SCRIPT = 811;
 
 	private static final String UNLOCKED_ITEMS_STRING = "!bronzemanunlocks";
 
